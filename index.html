@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Editor</title>
+  <style>
+    /* ── Design tokens ─────────────────────────────────────────────────── */
+    :root {
+      /* Highlight colors (used in Phase 3) */
+      --color-very-hard: #f9a8a8;
+      --color-hard:      #fde68a;
+      --color-wordy:     #e9d5ff;
+      --color-passive:   #bbf7d0;
+      --color-adverb:    #bfdbfe;
+
+      /* Layout */
+      --sidebar-width: 210px;
+      --stats-width:   230px;
+      --toolbar-height: 48px;
+
+      /* Palette */
+      --bg-app:      #f9fafb;
+      --bg-sidebar:  #f3f4f6;
+      --bg-editor:   #ffffff;
+      --bg-stats:    #f3f4f6;
+      --bg-toolbar:  #1f2937;
+      --text-primary:   #111827;
+      --text-secondary: #6b7280;
+      --text-inverse:   #f9fafb;
+      --border:      #e5e7eb;
+      --accent:      #2563eb;
+      --accent-hover:#1d4ed8;
+      --ch-active-bg:   #dbeafe;
+      --ch-active-text: #1e40af;
+
+      /* Typography */
+      --font-ui:     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-editor: Georgia, 'Times New Roman', serif;
+      --editor-size: 17px;
+      --editor-lh:   1.75;
+    }
+
+    /* ── Reset ─────────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    button { font-family: var(--font-ui); cursor: pointer; }
+
+    /* ── Shell ─────────────────────────────────────────────────────────── */
+    body {
+      font-family: var(--font-ui);
+      background: var(--bg-app);
+      color: var(--text-primary);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #storage-warning {
+      display: none;
+      background: #fef3c7;
+      color: #92400e;
+      font-size: 13px;
+      padding: 7px 16px;
+      text-align: center;
+      border-bottom: 1px solid #fcd34d;
+      flex-shrink: 0;
+    }
+
+    #app {
+      display: grid;
+      grid-template-columns: var(--sidebar-width) 1fr var(--stats-width);
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* ── Sidebar ───────────────────────────────────────────────────────── */
+    #sidebar {
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #sidebar-header {
+      padding: 14px 12px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    #sidebar-header h1 {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    #btn-new-chapter {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: background 0.15s;
+    }
+    #btn-new-chapter:hover { background: var(--accent-hover); }
+
+    #chapter-list {
+      list-style: none;
+      overflow-y: auto;
+      flex: 1;
+      padding: 6px;
+    }
+
+    .chapter-item {
+      display: flex;
+      align-items: center;
+      padding: 7px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      gap: 4px;
+      transition: background 0.1s;
+      position: relative;
+    }
+    .chapter-item:hover { background: rgba(0,0,0,0.05); }
+    .chapter-item.active {
+      background: var(--ch-active-bg);
+      color: var(--ch-active-text);
+    }
+
+    .chapter-title {
+      flex: 1;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+      user-select: none;
+      line-height: 1.4;
+    }
+
+    .chapter-rename-input {
+      flex: 1;
+      font-size: 13px;
+      font-family: var(--font-ui);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      padding: 2px 6px;
+      min-width: 0;
+      outline: none;
+      background: #fff;
+    }
+
+    .chapter-actions {
+      opacity: 0;
+      display: flex;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+    .chapter-item:hover .chapter-actions,
+    .chapter-item.active .chapter-actions { opacity: 1; }
+
+    .btn-delete-chapter {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 15px;
+      line-height: 1;
+      padding: 2px 5px;
+      border-radius: 4px;
+      transition: color 0.1s, background 0.1s;
+    }
+    .btn-delete-chapter:hover { color: #dc2626; background: #fee2e2; }
+
+    /* ── Editor ────────────────────────────────────────────────────────── */
+    #editor-area {
+      background: var(--bg-editor);
+      overflow-y: auto;
+      padding: 48px 64px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #editor {
+      flex: 1;
+      font-family: var(--font-editor);
+      font-size: var(--editor-size);
+      line-height: var(--editor-lh);
+      color: var(--text-primary);
+      outline: none;
+      max-width: 680px;
+      margin: 0 auto;
+      width: 100%;
+      min-height: calc(100% - 2px);
+    }
+
+    #editor:empty::before {
+      content: 'Start writing your chapter here…';
+      color: #9ca3af;
+      pointer-events: none;
+    }
+
+    /* Highlight marks (visible in Phase 3) */
+    mark[data-type="very-hard"] { background: var(--color-very-hard); }
+    mark[data-type="hard"]      { background: var(--color-hard); }
+    mark[data-type="wordy"]     { background: var(--color-wordy); }
+    mark[data-type="passive"]   { background: var(--color-passive); }
+    mark[data-type="adverb"]    { background: var(--color-adverb); }
+    mark { border-radius: 2px; }
+
+    /* ── Stats panel ───────────────────────────────────────────────────── */
+    #stats-panel {
+      background: var(--bg-stats);
+      border-left: 1px solid var(--border);
+      padding: 20px 14px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .stats-section { margin-bottom: 20px; }
+
+    .stats-heading {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 3px 0;
+      font-size: 13px;
+    }
+    .stat-label { color: var(--text-secondary); }
+    .stat-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+    .stats-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 4px 0 16px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 3px 0;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    /* ── Toolbar ───────────────────────────────────────────────────────── */
+    #toolbar {
+      background: var(--bg-toolbar);
+      height: var(--toolbar-height);
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 6px;
+      flex-shrink: 0;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .toolbar-btn {
+      background: rgba(255,255,255,0.08);
+      color: var(--text-inverse);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 5px;
+      padding: 5px 11px;
+      font-size: 13px;
+      transition: background 0.15s;
+    }
+    .toolbar-btn:hover { background: rgba(255,255,255,0.16); }
+    .toolbar-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .toolbar-btn.active {
+      background: rgba(255,255,255,0.22);
+      border-color: rgba(255,255,255,0.4);
+    }
+
+    .toolbar-gap { flex: 1; }
+
+    /* Export All dropdown */
+    #export-all-group { position: relative; }
+    #export-all-menu {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 6px);
+      right: 0;
+      background: #374151;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 6px;
+      overflow: hidden;
+      min-width: 150px;
+      z-index: 100;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+    #export-all-menu.open { display: block; }
+    .export-menu-item {
+      display: block;
+      width: 100%;
+      background: none;
+      border: none;
+      color: var(--text-inverse);
+      padding: 9px 14px;
+      text-align: left;
+      font-size: 13px;
+    }
+    .export-menu-item:hover { background: rgba(255,255,255,0.1); }
+
+    /* ── Toast ─────────────────────────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 58px;
+      left: 50%;
+      transform: translateX(-50%) translateY(8px);
+      background: #1f2937;
+      color: #fff;
+      padding: 7px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s, transform 0.18s;
+      z-index: 500;
+      white-space: nowrap;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Confirm modal ─────────────────────────────────────────────────── */
+    #modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 400;
+      align-items: center;
+      justify-content: center;
+    }
+    #modal-overlay.open { display: flex; }
+
+    #modal {
+      background: #fff;
+      border-radius: 10px;
+      padding: 24px;
+      max-width: 360px;
+      width: calc(100% - 32px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+    }
+    #modal h3 { font-size: 16px; margin-bottom: 8px; }
+    #modal p  {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+      margin-bottom: 20px;
+    }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+    .btn-modal {
+      border-radius: 6px;
+      padding: 7px 16px;
+      font-size: 14px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text-primary);
+    }
+    .btn-modal:hover { background: var(--bg-sidebar); }
+    .btn-modal-danger { background: #dc2626; color: #fff; border-color: #dc2626; }
+    .btn-modal-danger:hover { background: #b91c1c; }
+  </style>
+</head>
+<body>
+
+  <!-- Storage unavailable warning (private mode / quota exceeded) -->
+  <div id="storage-warning">
+    ⚠ localStorage is unavailable — your work will not be saved across sessions.
+  </div>
+
+  <!-- Three-column layout -->
+  <div id="app">
+
+    <!-- ── Sidebar ── -->
+    <aside id="sidebar" aria-label="Chapters">
+      <div id="sidebar-header">
+        <h1>Book Editor</h1>
+        <button id="btn-new-chapter" title="Create a new chapter">+ New Chapter</button>
+      </div>
+      <ul id="chapter-list" role="listbox" aria-label="Chapter list"></ul>
+    </aside>
+
+    <!-- ── Editor ── -->
+    <main id="editor-area">
+      <div
+        id="editor"
+        contenteditable="true"
+        spellcheck="true"
+        role="textbox"
+        aria-multiline="true"
+        aria-label="Chapter editor"
+      ></div>
+    </main>
+
+    <!-- ── Stats panel ── -->
+    <aside id="stats-panel" aria-label="Document statistics">
+      <div class="stats-section">
+        <p class="stats-heading">Stats</p>
+        <div class="stat-row">
+          <span class="stat-label">Grade</span>
+          <span class="stat-value" id="stat-grade">—</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Words</span>
+          <span class="stat-value" id="stat-words">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Sentences</span>
+          <span class="stat-value" id="stat-sentences">—</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Paragraphs</span>
+          <span class="stat-value" id="stat-paragraphs">—</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Reading time</span>
+          <span class="stat-value" id="stat-reading-time">—</span>
+        </div>
+      </div>
+
+      <hr class="stats-divider">
+
+      <div class="stats-section">
+        <p class="stats-heading">Legend</p>
+        <div class="legend-item">
+          <span class="legend-swatch" style="background:var(--color-very-hard)"></span>
+          Very hard sentence
+        </div>
+        <div class="legend-item">
+          <span class="legend-swatch" style="background:var(--color-hard)"></span>
+          Hard sentence
+        </div>
+        <div class="legend-item">
+          <span class="legend-swatch" style="background:var(--color-wordy)"></span>
+          Wordy phrase
+        </div>
+        <div class="legend-item">
+          <span class="legend-swatch" style="background:var(--color-passive)"></span>
+          Passive voice
+        </div>
+        <div class="legend-item">
+          <span class="legend-swatch" style="background:var(--color-adverb)"></span>
+          Adverb
+        </div>
+      </div>
+    </aside>
+
+  </div><!-- /#app -->
+
+  <!-- ── Toolbar ── -->
+  <div id="toolbar" role="toolbar" aria-label="Editor toolbar">
+    <button class="toolbar-btn" id="btn-toggle-highlights" title="Toggle highlight overlays">
+      Highlights On
+    </button>
+    <span class="toolbar-gap"></span>
+    <button class="toolbar-btn" id="btn-export-txt" title="Export active chapter as .txt">Export TXT</button>
+    <button class="toolbar-btn" id="btn-export-md"  title="Export active chapter as .md">Export MD</button>
+    <div id="export-all-group">
+      <button class="toolbar-btn" id="btn-export-all" title="Export all chapters">Export All ▾</button>
+      <div id="export-all-menu" role="menu">
+        <button class="export-menu-item" id="btn-export-all-txt" role="menuitem">All chapters — TXT</button>
+        <button class="export-menu-item" id="btn-export-all-md"  role="menuitem">All chapters — MD</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Toast ── -->
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <!-- ── Delete confirmation modal ── -->
+  <div id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div id="modal">
+      <h3 id="modal-title">Delete chapter?</h3>
+      <p>
+        <span id="modal-chapter-name"></span> will be permanently deleted.
+        This cannot be undone.
+      </p>
+      <div class="modal-actions">
+        <button class="btn-modal" id="btn-cancel-delete">Cancel</button>
+        <button class="btn-modal btn-modal-danger" id="btn-confirm-delete">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    'use strict';
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // state.js — AppState, localStorage, chapter CRUD
+    // ═══════════════════════════════════════════════════════════════════════
+
+    const KEYS = {
+      INDEX:    'book-chapter-index',
+      SETTINGS: 'book-settings',
+      chapter:  id => `book-chapter-${id}`,
+    };
+
+    let storageOk = false;
+
+    function probeStorage() {
+      try {
+        localStorage.setItem('__probe__', '1');
+        localStorage.removeItem('__probe__');
+        storageOk = true;
+      } catch {
+        storageOk = false;
+        document.getElementById('storage-warning').style.display = 'block';
+      }
+    }
+
+    function uid() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    }
+
+    const state = {
+      chapters: [],          // [{ id, title, createdAt }]
+      activeChapterId: null,
+      settings: { highlightsEnabled: true },
+
+      init() {
+        probeStorage();
+        if (storageOk) {
+          this._loadIndex();
+          this._loadSettings();
+        }
+        if (this.chapters.length === 0) {
+          const ch = this._newChapterObj('Chapter 1');
+          this.chapters.push(ch);
+          this.activeChapterId = ch.id;
+          this._saveIndex();
+        }
+      },
+
+      _newChapterObj(title) {
+        return { id: uid(), title, createdAt: Date.now() };
+      },
+
+      createChapter(title) {
+        const ch = this._newChapterObj(title || `Chapter ${this.chapters.length + 1}`);
+        this.chapters.push(ch);
+        this._saveIndex();
+        return ch;
+      },
+
+      deleteChapter(id) {
+        if (this.chapters.length <= 1) return false;
+        const idx = this.chapters.findIndex(c => c.id === id);
+        if (idx === -1) return false;
+        this.chapters.splice(idx, 1);
+        if (storageOk) localStorage.removeItem(KEYS.chapter(id));
+        if (this.activeChapterId === id) {
+          this.activeChapterId = this.chapters[Math.min(idx, this.chapters.length - 1)].id;
+        }
+        this._saveIndex();
+        return true;
+      },
+
+      renameChapter(id, title) {
+        const ch = this.chapters.find(c => c.id === id);
+        if (!ch || !title.trim()) return false;
+        ch.title = title.trim();
+        this._saveIndex();
+        return true;
+      },
+
+      getContent(id) {
+        if (!storageOk) return '';
+        return localStorage.getItem(KEYS.chapter(id)) ?? '';
+      },
+
+      setContent(id, html) {
+        if (!storageOk) return;
+        try {
+          localStorage.setItem(KEYS.chapter(id), html);
+        } catch (e) {
+          if (e.name === 'QuotaExceededError') showToast('⚠ Storage full — oldest draft may be lost.');
+        }
+      },
+
+      saveSettings() {
+        if (!storageOk) return;
+        localStorage.setItem(KEYS.SETTINGS, JSON.stringify(this.settings));
+      },
+
+      _saveIndex() {
+        if (!storageOk) return;
+        localStorage.setItem(KEYS.INDEX, JSON.stringify({
+          chapters: this.chapters,
+          activeChapterId: this.activeChapterId,
+        }));
+      },
+
+      _loadIndex() {
+        const raw = localStorage.getItem(KEYS.INDEX);
+        if (!raw) return;
+        try {
+          const d = JSON.parse(raw);
+          this.chapters = Array.isArray(d.chapters) ? d.chapters : [];
+          this.activeChapterId = d.activeChapterId ?? null;
+        } catch { /* corrupted — start fresh */ }
+      },
+
+      _loadSettings() {
+        const raw = localStorage.getItem(KEYS.SETTINGS);
+        if (!raw) return;
+        try { Object.assign(this.settings, JSON.parse(raw)); } catch {}
+      },
+    };
+
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // chapters.js — sidebar render, switching, inline rename, delete
+    // ═══════════════════════════════════════════════════════════════════════
+
+    let pendingDeleteId = null;
+    const editor = () => document.getElementById('editor');
+
+    function renderSidebar() {
+      const list = document.getElementById('chapter-list');
+      list.innerHTML = '';
+
+      state.chapters.forEach(ch => {
+        const li = document.createElement('li');
+        li.className = 'chapter-item' + (ch.id === state.activeChapterId ? ' active' : '');
+        li.dataset.id = ch.id;
+        li.setAttribute('role', 'option');
+        li.setAttribute('aria-selected', ch.id === state.activeChapterId ? 'true' : 'false');
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'chapter-title';
+        titleSpan.textContent = ch.title;
+        titleSpan.title = ch.title;
+
+        const actions = document.createElement('div');
+        actions.className = 'chapter-actions';
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn-delete-chapter';
+        delBtn.title = `Delete "${ch.title}"`;
+        delBtn.setAttribute('aria-label', `Delete chapter: ${ch.title}`);
+        delBtn.textContent = '×';
+
+        actions.appendChild(delBtn);
+        li.appendChild(titleSpan);
+        li.appendChild(actions);
+        list.appendChild(li);
+
+        // Click → switch chapter
+        li.addEventListener('click', e => {
+          if (e.target.closest('.chapter-actions')) return;
+          if (li.querySelector('.chapter-rename-input')) return;
+          switchToChapter(ch.id);
+        });
+
+        // Double-click title → rename
+        titleSpan.addEventListener('dblclick', e => {
+          e.stopPropagation();
+          startRename(li, ch.id);
+        });
+
+        // Delete button
+        delBtn.addEventListener('click', e => {
+          e.stopPropagation();
+          openDeleteModal(ch.id, ch.title);
+        });
+      });
+    }
+
+    function startRename(li, id) {
+      const titleSpan = li.querySelector('.chapter-title');
+      const ch = state.chapters.find(c => c.id === id);
+      if (!ch) return;
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'chapter-rename-input';
+      input.value = ch.title;
+      input.setAttribute('aria-label', 'Rename chapter');
+
+      titleSpan.replaceWith(input);
+      input.focus();
+      input.select();
+
+      let committed = false;
+      function commit() {
+        if (committed) return;
+        committed = true;
+        const val = input.value.trim() || ch.title;
+        state.renameChapter(id, val);
+        renderSidebar();
+      }
+
+      input.addEventListener('blur', commit);
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter')  { e.preventDefault(); input.blur(); }
+        if (e.key === 'Escape') { input.value = ch.title; input.blur(); }
+      });
+    }
+
+    function saveCurrentContent() {
+      if (state.activeChapterId) {
+        state.setContent(state.activeChapterId, editor().innerHTML);
+      }
+    }
+
+    function switchToChapter(id) {
+      if (id === state.activeChapterId) return;
+      saveCurrentContent();
+      state.activeChapterId = id;
+      state._saveIndex();
+      loadChapterIntoEditor(id);
+      renderSidebar();
+      updateWordCount();
+    }
+
+    function loadChapterIntoEditor(id) {
+      const el = editor();
+      el.innerHTML = state.getContent(id);
+      // Place cursor at end of content
+      el.focus();
+      if (el.childNodes.length > 0) {
+        const range = document.createRange();
+        const sel   = window.getSelection();
+        range.selectNodeContents(el);
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }
+
+    function openDeleteModal(id, title) {
+      if (state.chapters.length <= 1) {
+        showToast('Cannot delete the only chapter.');
+        return;
+      }
+      pendingDeleteId = id;
+      document.getElementById('modal-chapter-name').textContent = `"${title}"`;
+      document.getElementById('modal-overlay').classList.add('open');
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('modal-overlay').classList.remove('open');
+      pendingDeleteId = null;
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // stats.js (Phase 1 stub — word count only; full stats in Phase 2)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function updateWordCount() {
+      const text = editor().textContent || '';
+      const words = (text.match(/\b\w+\b/g) || []).length;
+      document.getElementById('stat-words').textContent = words.toLocaleString();
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // exporter.js (Phase 4 stub — wired but implementation deferred)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function stripHtml(html) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      // Treat block-level elements as paragraph breaks
+      tmp.querySelectorAll('div, p, br').forEach(el => {
+        el.before(document.createTextNode('\n'));
+      });
+      return (tmp.textContent || '').replace(/\n{3,}/g, '\n\n').trim();
+    }
+
+    function triggerDownload(content, filename, mime) {
+      const blob = new Blob([content], { type: mime });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function safeFilename(title) {
+      return title.replace(/[^a-z0-9_\- ]/gi, '_').trim().replace(/\s+/g, '_') || 'chapter';
+    }
+
+    function exportActiveAsTxt() {
+      const ch = state.chapters.find(c => c.id === state.activeChapterId);
+      if (!ch) return;
+      const text = stripHtml(state.getContent(ch.id));
+      triggerDownload(text, `${safeFilename(ch.title)}.txt`, 'text/plain');
+    }
+
+    function exportActiveAsMd() {
+      const ch = state.chapters.find(c => c.id === state.activeChapterId);
+      if (!ch) return;
+      const text = stripHtml(state.getContent(ch.id));
+      triggerDownload(`# ${ch.title}\n\n${text}`, `${safeFilename(ch.title)}.md`, 'text/markdown');
+    }
+
+    function exportAllAsTxt() {
+      const parts = state.chapters.map(ch => {
+        const text = stripHtml(state.getContent(ch.id));
+        return `${ch.title}\n${'─'.repeat(ch.title.length)}\n\n${text}`;
+      });
+      triggerDownload(parts.join('\n\n---\n\n'), 'manuscript.txt', 'text/plain');
+    }
+
+    function exportAllAsMd() {
+      const parts = state.chapters.map(ch => {
+        const text = stripHtml(state.getContent(ch.id));
+        return `## ${ch.title}\n\n${text}`;
+      });
+      triggerDownload(parts.join('\n\n---\n\n'), 'manuscript.md', 'text/markdown');
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ui.js — event wiring, debounce, toast, keyboard shortcuts
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function showToast(msg, duration = 2000) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => el.classList.remove('show'), duration);
+    }
+
+    function debounce(fn, ms) {
+      let t;
+      return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+    }
+
+    const onInput = debounce(() => {
+      saveCurrentContent();
+      updateWordCount();
+      // Phase 2: stats.update()
+      // Phase 3: analyzer.run() → highlighter.render()
+    }, 400);
+
+    function init() {
+      state.init();
+      renderSidebar();
+
+      const activeId = state.activeChapterId;
+      if (activeId) {
+        loadChapterIntoEditor(activeId);
+        updateWordCount();
+      }
+
+      // ── New chapter ─────────────────────────────────────────────────
+      document.getElementById('btn-new-chapter').addEventListener('click', () => {
+        saveCurrentContent();
+        const ch = state.createChapter();
+        state.activeChapterId = ch.id;
+        state._saveIndex();
+        renderSidebar();
+        loadChapterIntoEditor(ch.id);
+        updateWordCount();
+      });
+
+      // ── Editor input ─────────────────────────────────────────────────
+      editor().addEventListener('input', onInput);
+
+      // ── Highlight toggle (Phase 3 stub) ──────────────────────────────
+      const toggleBtn = document.getElementById('btn-toggle-highlights');
+      toggleBtn.addEventListener('click', () => {
+        state.settings.highlightsEnabled = !state.settings.highlightsEnabled;
+        state.saveSettings();
+        toggleBtn.textContent = state.settings.highlightsEnabled ? 'Highlights On' : 'Highlights Off';
+        toggleBtn.classList.toggle('active', !state.settings.highlightsEnabled);
+        // Phase 3: re-render or strip marks
+      });
+      if (!state.settings.highlightsEnabled) {
+        toggleBtn.textContent = 'Highlights Off';
+        toggleBtn.classList.add('active');
+      }
+
+      // ── Export buttons ───────────────────────────────────────────────
+      document.getElementById('btn-export-txt').addEventListener('click', exportActiveAsTxt);
+      document.getElementById('btn-export-md').addEventListener('click',  exportActiveAsMd);
+
+      const exportAllBtn  = document.getElementById('btn-export-all');
+      const exportAllMenu = document.getElementById('export-all-menu');
+
+      exportAllBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        exportAllMenu.classList.toggle('open');
+      });
+      document.getElementById('btn-export-all-txt').addEventListener('click', () => {
+        exportAllAsTxt();
+        exportAllMenu.classList.remove('open');
+      });
+      document.getElementById('btn-export-all-md').addEventListener('click', () => {
+        exportAllAsMd();
+        exportAllMenu.classList.remove('open');
+      });
+      document.addEventListener('click', () => exportAllMenu.classList.remove('open'));
+
+      // ── Delete modal ─────────────────────────────────────────────────
+      document.getElementById('btn-confirm-delete').addEventListener('click', () => {
+        if (!pendingDeleteId) return;
+        const wasActive = pendingDeleteId === state.activeChapterId;
+        state.deleteChapter(pendingDeleteId);
+        closeDeleteModal();
+        renderSidebar();
+        if (wasActive) {
+          loadChapterIntoEditor(state.activeChapterId);
+          updateWordCount();
+        }
+      });
+      document.getElementById('btn-cancel-delete').addEventListener('click', closeDeleteModal);
+      document.getElementById('modal-overlay').addEventListener('click', e => {
+        if (e.target === document.getElementById('modal-overlay')) closeDeleteModal();
+      });
+
+      // ── Keyboard shortcuts ───────────────────────────────────────────
+      document.addEventListener('keydown', e => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+          e.preventDefault();
+          saveCurrentContent();
+          showToast('✓ Saved');
+        }
+        if (e.key === 'Escape') closeDeleteModal();
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
