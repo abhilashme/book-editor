@@ -384,6 +384,164 @@
     .btn-modal:hover { background: var(--bg-sidebar); }
     .btn-modal-danger { background: #dc2626; color: #fff; border-color: #dc2626; }
     .btn-modal-danger:hover { background: #b91c1c; }
+
+    /* ── Phase 4: AI Features ─────────────────────────────────────────────── */
+
+    /* Settings modal */
+    #settings-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45); z-index: 600;
+      align-items: center; justify-content: center;
+    }
+    #settings-overlay.open { display: flex; }
+    #settings-modal {
+      background: #fff; border-radius: 10px; padding: 24px;
+      max-width: 380px; width: calc(100% - 32px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.18); position: relative;
+    }
+    #settings-modal h3 { font-size: 16px; margin-bottom: 16px; }
+    .settings-field { margin-bottom: 12px; }
+    .settings-field label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+    .settings-field input {
+      width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+      border-radius: 6px; font-size: 14px; font-family: var(--font-ui);
+    }
+    .settings-field input:focus { outline: none; border-color: var(--accent); }
+    #settings-status { font-size: 13px; color: var(--text-secondary); min-height: 18px; margin: 8px 0 12px; }
+    .settings-actions { display: flex; align-items: center; justify-content: space-between; }
+    #btn-settings-save {
+      background: var(--accent); color: #fff; border: none;
+      border-radius: 6px; padding: 8px 16px; font-size: 14px; cursor: pointer;
+    }
+    #btn-settings-save:hover { background: var(--accent-hover); }
+    #btn-settings-remove { background: none; border: none; color: #dc2626; font-size: 13px; cursor: pointer; }
+    #btn-settings-remove:hover { text-decoration: underline; }
+    #btn-settings-close {
+      position: absolute; top: 12px; right: 14px;
+      background: none; border: none; font-size: 20px; cursor: pointer;
+      color: var(--text-secondary); line-height: 1;
+    }
+
+    /* Rewrite popover */
+    #rewrite-popover {
+      display: none; position: fixed; z-index: 700;
+      background: #fff; border: 1px solid var(--border); border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.14); width: 340px;
+    }
+    #rewrite-popover.open { display: block; }
+    .popover-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px 8px; border-bottom: 1px solid var(--border);
+      font-size: 12px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text-secondary);
+    }
+    .popover-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-secondary); line-height: 1; padding: 0; }
+    .popover-body { padding: 10px 14px; min-height: 40px; }
+    .popover-spinner { color: var(--text-secondary); font-size: 13px; }
+    .rewrite-option {
+      display: block; width: 100%; text-align: left;
+      background: #f9fafb; border: 1px solid var(--border); border-radius: 6px;
+      padding: 8px 10px; font-size: 13px; font-family: var(--font-editor);
+      line-height: 1.5; margin-bottom: 6px; cursor: pointer;
+      transition: background 0.1s, border-color 0.1s;
+    }
+    .rewrite-option:hover { background: #eff6ff; border-color: var(--accent); }
+    .rewrite-option.selected { background: #dbeafe; border-color: var(--accent); }
+    .popover-footer { display: flex; gap: 6px; padding: 8px 14px 10px; border-top: 1px solid var(--border); }
+    .btn-popover { border-radius: 5px; padding: 5px 12px; font-size: 13px; border: 1px solid var(--border); background: #fff; cursor: pointer; }
+    .btn-popover:hover { background: var(--bg-sidebar); }
+    #btn-popover-accept { background: var(--accent); color: #fff; border-color: var(--accent); }
+    #btn-popover-accept:hover { background: var(--accent-hover); }
+    #btn-popover-accept:disabled { opacity: 0.4; cursor: not-allowed; background: var(--accent); }
+    .popover-error { color: #dc2626; font-size: 13px; }
+
+    /* Chat panel — lives in the same right grid slot as stats-panel */
+    #chat-panel {
+      background: var(--bg-stats); border-left: 1px solid var(--border);
+      flex-direction: column; overflow: hidden; display: none;
+    }
+    #app.chat-open { grid-template-columns: var(--sidebar-width) 1fr 280px; }
+    #app.chat-open #stats-panel { display: none; }
+    #app.chat-open #chat-panel  { display: flex; }
+    .chat-panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .chat-panel-title { font-size: 13px; font-weight: 600; }
+    #btn-chat-clear { background: none; border: none; font-size: 15px; cursor: pointer; color: var(--text-secondary); }
+    #btn-chat-clear:hover { color: #dc2626; }
+    #chat-messages {
+      flex: 1; overflow-y: auto; padding: 10px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .chat-msg {
+      max-width: 90%; padding: 8px 10px; border-radius: 8px;
+      font-size: 13px; line-height: 1.5; word-break: break-word;
+    }
+    .chat-msg-user { align-self: flex-end; background: #dbeafe; }
+    .chat-msg-asst { align-self: flex-start; background: #fff; border: 1px solid var(--border); }
+    .chat-input-row { border-top: 1px solid var(--border); padding: 8px; display: flex; gap: 6px; flex-shrink: 0; }
+    #chat-input {
+      flex: 1; resize: none; border: 1px solid var(--border); border-radius: 6px;
+      padding: 7px 9px; font-size: 13px; font-family: var(--font-ui);
+      line-height: 1.4; max-height: 112px; overflow-y: auto;
+    }
+    #chat-input:focus { outline: none; border-color: var(--accent); }
+    #btn-chat-send {
+      background: var(--accent); color: #fff; border: none;
+      border-radius: 6px; padding: 7px 12px; font-size: 13px;
+      cursor: pointer; align-self: flex-end; flex-shrink: 0;
+    }
+    #btn-chat-send:hover { background: var(--accent-hover); }
+    #btn-chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
+    #btn-chat-stop {
+      display: none; background: #dc2626; color: #fff; border: none;
+      border-radius: 6px; padding: 7px 10px; font-size: 13px;
+      cursor: pointer; align-self: flex-end; flex-shrink: 0;
+    }
+    #btn-chat-stop.visible { display: block; }
+
+    /* Critique modal */
+    #critique-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45); z-index: 600;
+      align-items: flex-start; justify-content: center;
+      padding: 40px 20px; overflow-y: auto;
+    }
+    #critique-overlay.open { display: flex; }
+    #critique-modal {
+      background: #fff; border-radius: 10px;
+      max-width: 680px; width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+      display: flex; flex-direction: column;
+      max-height: calc(100vh - 80px);
+    }
+    .critique-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .critique-header h3 { font-size: 16px; }
+    #btn-critique-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-secondary); line-height: 1; }
+    #critique-body {
+      flex: 1; overflow-y: auto; padding: 20px;
+      font-size: 14px; line-height: 1.7; white-space: pre-wrap; min-height: 200px;
+    }
+    .critique-footer {
+      padding: 12px 20px; border-top: 1px solid var(--border);
+      display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0;
+    }
+    .btn-critique { border-radius: 6px; padding: 7px 14px; font-size: 13px; border: 1px solid var(--border); background: #fff; cursor: pointer; }
+    .btn-critique:hover { background: var(--bg-sidebar); }
+    #btn-critique-copy { background: var(--accent); color: #fff; border-color: var(--accent); }
+    #btn-critique-copy:hover { background: var(--accent-hover); }
+
+    /* Critique trigger in stats panel */
+    #btn-critique-trigger {
+      display: block; width: 100%;
+      background: var(--accent); color: #fff; border: none; border-radius: 6px;
+      padding: 8px 12px; font-size: 13px; font-weight: 500; cursor: pointer; margin-bottom: 16px;
+    }
+    #btn-critique-trigger:hover { background: var(--accent-hover); }
   </style>
 </head>
 <body>
@@ -443,6 +601,8 @@
         </div>
       </div>
 
+      <button id="btn-critique-trigger">Critique Chapter</button>
+
       <hr class="stats-divider">
 
       <div class="stats-section">
@@ -470,6 +630,20 @@
       </div>
     </aside>
 
+    <!-- ── Chat panel ── -->
+    <aside id="chat-panel" aria-label="AI writing coach">
+      <div class="chat-panel-header">
+        <span class="chat-panel-title">AI Writing Coach</span>
+        <button id="btn-chat-clear" title="Clear chat history">🗑</button>
+      </div>
+      <div id="chat-messages"></div>
+      <div class="chat-input-row">
+        <textarea id="chat-input" rows="1" placeholder="Ask about this chapter…" aria-label="Chat message"></textarea>
+        <button id="btn-chat-stop" aria-label="Stop generating">■</button>
+        <button id="btn-chat-send" aria-label="Send">Send</button>
+      </div>
+    </aside>
+
   </div><!-- /#app -->
 
   <!-- ── Toolbar ── -->
@@ -485,6 +659,54 @@
       <div id="export-all-menu" role="menu">
         <button class="export-menu-item" id="btn-export-all-txt" role="menuitem">All chapters — TXT</button>
         <button class="export-menu-item" id="btn-export-all-md"  role="menuitem">All chapters — MD</button>
+      </div>
+    </div>
+    <button class="toolbar-btn" id="btn-chat" title="Toggle AI chat sidebar">Chat</button>
+    <button class="toolbar-btn" id="btn-settings" title="API key settings">⚙</button>
+  </div>
+
+  <!-- ── Settings modal ── -->
+  <div id="settings-overlay" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+    <div id="settings-modal">
+      <button id="btn-settings-close" aria-label="Close settings">✕</button>
+      <h3 id="settings-modal-title">Settings</h3>
+      <div class="settings-field">
+        <label for="settings-key-input">Anthropic API Key</label>
+        <input type="password" id="settings-key-input" placeholder="sk-ant-…" autocomplete="off">
+      </div>
+      <div id="settings-status"></div>
+      <div class="settings-actions">
+        <button id="btn-settings-remove">Remove key</button>
+        <button id="btn-settings-save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Rewrite popover ── -->
+  <div id="rewrite-popover" role="dialog" aria-label="Rewrite suggestions">
+    <div class="popover-header">
+      <span id="popover-type-label"></span>
+      <button class="popover-close" id="btn-popover-close" aria-label="Close">✕</button>
+    </div>
+    <div class="popover-body" id="popover-body"></div>
+    <div class="popover-footer">
+      <button class="btn-popover" id="btn-popover-accept" disabled>Accept</button>
+      <button class="btn-popover" id="btn-popover-retry">Try again</button>
+      <button class="btn-popover" id="btn-popover-dismiss">Dismiss</button>
+    </div>
+  </div>
+
+  <!-- ── Critique modal ── -->
+  <div id="critique-overlay" role="dialog" aria-modal="true" aria-labelledby="critique-modal-title">
+    <div id="critique-modal">
+      <div class="critique-header">
+        <h3 id="critique-modal-title">Chapter Critique</h3>
+        <button id="btn-critique-close" aria-label="Close critique">✕</button>
+      </div>
+      <div id="critique-body"></div>
+      <div class="critique-footer">
+        <button class="btn-critique" id="btn-critique-regen">Regenerate</button>
+        <button class="btn-critique" id="btn-critique-copy">Copy to clipboard</button>
       </div>
     </div>
   </div>
@@ -1360,7 +1582,525 @@
         }
         if (e.key === 'Escape') closeDeleteModal();
       });
+
+      // ── Phase 4: AI features ─────────────────────────────────────────
+      initSettings();
+      initRewritePopover();
+      initChat();
+      initCritique();
     }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ai.js — shared Anthropic API helpers
+    // ═══════════════════════════════════════════════════════════════════════
+
+    const AI_URL     = 'https://api.anthropic.com/v1/messages';
+    const AI_VERSION = '2023-06-01';
+    const AI_KEY_LS  = 'book-api-key';
+
+    function getApiKey() { return localStorage.getItem(AI_KEY_LS) || ''; }
+
+    async function callClaude({ model, system, messages, signal }) {
+      const resp = await fetch(AI_URL, {
+        method: 'POST', signal,
+        headers: {
+          'x-api-key': getApiKey(),
+          'anthropic-version': AI_VERSION,
+          'anthropic-dangerous-direct-browser-access': 'true',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ model, system, messages, max_tokens: 1024 }),
+      });
+      if (!resp.ok) {
+        const d = await resp.json().catch(() => ({}));
+        throw Object.assign(new Error(d.error?.message || resp.statusText), { status: resp.status });
+      }
+      const data = await resp.json();
+      return data.content?.[0]?.text || '';
+    }
+
+    async function* streamClaude({ model, system, messages, signal }) {
+      const resp = await fetch(AI_URL, {
+        method: 'POST', signal,
+        headers: {
+          'x-api-key': getApiKey(),
+          'anthropic-version': AI_VERSION,
+          'anthropic-dangerous-direct-browser-access': 'true',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ model, system, messages, max_tokens: 2048, stream: true }),
+      });
+      if (!resp.ok) {
+        const d = await resp.json().catch(() => ({}));
+        throw Object.assign(new Error(d.error?.message || resp.statusText), { status: resp.status });
+      }
+      const reader = resp.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const raw = line.slice(6).trim();
+          if (raw === '[DONE]') return;
+          try {
+            const ev = JSON.parse(raw);
+            if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') {
+              yield ev.delta.text;
+            }
+          } catch {}
+        }
+      }
+    }
+
+    function aiError(err) {
+      if (err.name === 'AbortError') return '';
+      if (err.status === 429) return 'Rate limit reached — wait a moment and try again.';
+      if (err.status === 401) return 'Invalid API key — check Settings.';
+      return 'Could not reach Anthropic — check your connection.';
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // settings.js — API key modal
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function openSettings(message) {
+      const inp = document.getElementById('settings-key-input');
+      const st  = document.getElementById('settings-status');
+      inp.value = getApiKey();
+      st.textContent = message || (getApiKey() ? 'Connected · claude-haiku-4-5' : 'No key saved');
+      document.getElementById('settings-overlay').classList.add('open');
+      setTimeout(() => inp.focus(), 60);
+    }
+
+    function closeSettings() {
+      document.getElementById('settings-overlay').classList.remove('open');
+    }
+
+    function ensureApiKey() {
+      if (getApiKey()) return true;
+      openSettings('Add your API key to use AI features.');
+      return false;
+    }
+
+    function initSettings() {
+      document.getElementById('btn-settings').addEventListener('click', () => openSettings());
+      document.getElementById('btn-settings-close').addEventListener('click', closeSettings);
+      document.getElementById('settings-overlay').addEventListener('click', e => {
+        if (e.target.id === 'settings-overlay') closeSettings();
+      });
+
+      document.getElementById('btn-settings-save').addEventListener('click', async () => {
+        const key = document.getElementById('settings-key-input').value.trim();
+        const st  = document.getElementById('settings-status');
+        if (!key) { st.textContent = 'Enter an API key.'; return; }
+        st.textContent = 'Verifying…';
+        try {
+          const resp = await fetch(AI_URL, {
+            method: 'POST',
+            headers: {
+              'x-api-key': key,
+              'anthropic-version': AI_VERSION,
+              'anthropic-dangerous-direct-browser-access': 'true',
+              'content-type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'claude-haiku-4-5-20251001',
+              messages: [{ role: 'user', content: 'hi' }],
+              max_tokens: 1,
+            }),
+          });
+          if (resp.ok || resp.status === 400) {
+            localStorage.setItem(AI_KEY_LS, key);
+            st.textContent = 'Verified ✓  Connected · claude-haiku-4-5';
+          } else {
+            const d = await resp.json().catch(() => ({}));
+            st.textContent = d.error?.message || `Error ${resp.status}`;
+          }
+        } catch {
+          st.textContent = 'Could not reach Anthropic — check your connection.';
+        }
+      });
+
+      document.getElementById('btn-settings-remove').addEventListener('click', () => {
+        localStorage.removeItem(AI_KEY_LS);
+        document.getElementById('settings-key-input').value = '';
+        document.getElementById('settings-status').textContent = 'No key saved';
+      });
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // rewrite-popover.js — inline rewrite suggestions on mark click
+    // ═══════════════════════════════════════════════════════════════════════
+
+    let _pwAbort = null, _pwMark = null, _pwChosen = null;
+
+    function _pwClose() {
+      if (_pwAbort) { _pwAbort.abort(); _pwAbort = null; }
+      document.getElementById('rewrite-popover').classList.remove('open');
+      _pwMark = null; _pwChosen = null;
+    }
+
+    function _pwPosition(mark) {
+      const pop  = document.getElementById('rewrite-popover');
+      const rect = mark.getBoundingClientRect();
+      let top  = rect.bottom + 8;
+      let left = rect.left;
+      if (left + 340 > window.innerWidth - 10) left = window.innerWidth - 350;
+      if (left < 10) left = 10;
+      if (top + 220 > window.innerHeight) top = rect.top - 228;
+      pop.style.top  = `${top}px`;
+      pop.style.left = `${left}px`;
+    }
+
+    function _markAbsOffset(markEl) {
+      const editorEl = editor();
+      const walker   = document.createTreeWalker(editorEl, NodeFilter.SHOW_TEXT);
+      let off = 0, node;
+      while ((node = walker.nextNode())) {
+        if (node === markEl.firstChild || markEl.contains(node)) return off;
+        off += node.nodeValue.length;
+      }
+      return editorEl.textContent.indexOf(markEl.textContent);
+    }
+
+    function _sentenceFor(markEl) {
+      const fullText = editor().textContent;
+      const absOff   = _markAbsOffset(markEl);
+      const sents    = segmentSentences(fullText);
+      let from = 0;
+      for (const s of sents) {
+        const idx = fullText.indexOf(s, from);
+        if (idx !== -1 && absOff >= idx && absOff < idx + s.length) return s;
+        from = Math.max(from, idx + s.length);
+      }
+      return markEl.textContent;
+    }
+
+    async function openPopover(markEl) {
+      if (!ensureApiKey()) return;
+      _pwClose();
+      _pwMark = markEl;
+
+      const pop  = document.getElementById('rewrite-popover');
+      const body = document.getElementById('popover-body');
+      document.getElementById('popover-type-label').textContent =
+        ARIA_LABELS[markEl.dataset.type] || markEl.dataset.type;
+      body.innerHTML = '<span class="popover-spinner">Generating rewrites…</span>';
+      document.getElementById('btn-popover-accept').disabled = true;
+      pop.classList.add('open');
+      _pwPosition(markEl);
+
+      _pwAbort = new AbortController();
+      const tid = setTimeout(() => _pwAbort?.abort(), 10000);
+      try {
+        const result = await callClaude({
+          model: 'claude-haiku-4-5-20251001',
+          system: 'You are a prose editor. Rewrite the given sentence to fix the flagged issue.\nReturn exactly two alternatives separated by the token |||.\nNo preamble, no labels, no explanation.',
+          messages: [{ role: 'user', content: `Issue: ${ARIA_LABELS[markEl.dataset.type] || markEl.dataset.type}\nSentence: ${_sentenceFor(markEl)}` }],
+          signal: _pwAbort.signal,
+        });
+        clearTimeout(tid);
+        const opts = result.split('|||').map(s => s.trim()).filter(Boolean);
+        body.innerHTML = '';
+        _pwChosen = null;
+        const accept = document.getElementById('btn-popover-accept');
+        accept.disabled = true;
+        (opts.length >= 2 ? opts.slice(0, 2) : [opts[0], opts[0]]).forEach(text => {
+          const btn = document.createElement('button');
+          btn.className = 'rewrite-option';
+          btn.textContent = text;
+          btn.addEventListener('click', () => {
+            body.querySelectorAll('.rewrite-option').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            _pwChosen = text;
+            accept.disabled = false;
+          });
+          body.appendChild(btn);
+        });
+        if (_pwMark) _pwPosition(_pwMark);
+      } catch (err) {
+        clearTimeout(tid);
+        const msg = aiError(err);
+        if (msg) body.innerHTML = `<span class="popover-error">${msg}</span>`;
+      }
+    }
+
+    function acceptPopover() {
+      if (!_pwChosen || !_pwMark) return;
+      const editorEl = editor();
+      const target   = _sentenceFor(_pwMark);
+
+      // Walk text nodes, build combined string, replace target sentence in-place
+      const walker = document.createTreeWalker(editorEl, NodeFilter.SHOW_TEXT);
+      const nodes = []; let combined = ''; let node;
+      while ((node = walker.nextNode())) {
+        nodes.push({ node, start: combined.length });
+        combined += node.nodeValue;
+      }
+      const si = combined.indexOf(target);
+      if (si === -1) { _pwClose(); return; }
+      const ei = si + target.length;
+      let done = false;
+      for (const { node: n, start } of nodes) {
+        const nEnd = start + n.nodeValue.length;
+        if (nEnd <= si || start >= ei) continue;
+        const lStart = Math.max(0, si - start);
+        const lEnd   = Math.min(n.nodeValue.length, ei - start);
+        if (!done) {
+          n.nodeValue = n.nodeValue.slice(0, lStart) + _pwChosen + n.nodeValue.slice(lEnd);
+          done = true;
+        } else {
+          n.nodeValue = n.nodeValue.slice(lEnd);
+        }
+      }
+      saveCurrentContent();
+      runHighlights();
+      _pwClose();
+    }
+
+    function initRewritePopover() {
+      editor().addEventListener('click', e => {
+        const mark = e.target.closest('mark');
+        if (mark) openPopover(mark);
+        else _pwClose();
+      });
+      document.getElementById('btn-popover-close').addEventListener('click', _pwClose);
+      document.getElementById('btn-popover-dismiss').addEventListener('click', _pwClose);
+      document.getElementById('btn-popover-accept').addEventListener('click', acceptPopover);
+      document.getElementById('btn-popover-retry').addEventListener('click', () => { if (_pwMark) openPopover(_pwMark); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') _pwClose(); });
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // chat.js — AI chat sidebar with streaming
+    // ═══════════════════════════════════════════════════════════════════════
+
+    let _chatAbort = null;
+
+    function _chatKey() { return `book-chat-${state.activeChapterId}`; }
+
+    function _chatHistory() {
+      try { return JSON.parse(localStorage.getItem(_chatKey()) || '[]'); } catch { return []; }
+    }
+
+    function _chatSave(msgs) {
+      try { localStorage.setItem(_chatKey(), JSON.stringify(msgs.slice(-40))); } catch {}
+    }
+
+    function _mdToHtml(text) {
+      return text
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g,'<em>$1</em>')
+        .replace(/\n/g,'<br>');
+    }
+
+    function renderChatHistory() {
+      const container = document.getElementById('chat-messages');
+      container.innerHTML = '';
+      for (const m of _chatHistory()) {
+        const div = document.createElement('div');
+        div.className = `chat-msg ${m.role === 'user' ? 'chat-msg-user' : 'chat-msg-asst'}`;
+        div.innerHTML = m.role === 'user'
+          ? m.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')
+          : _mdToHtml(m.content);
+        container.appendChild(div);
+      }
+      container.scrollTop = container.scrollHeight;
+    }
+
+    async function sendChatMessage() {
+      const textarea = document.getElementById('chat-input');
+      const text     = textarea.value.trim();
+      if (!text || _chatAbort) return;
+      if (!ensureApiKey()) return;
+
+      const history = _chatHistory();
+      history.push({ role: 'user', content: text, ts: Date.now() });
+      _chatSave(history);
+      textarea.value = '';
+      textarea.style.height = '';
+      renderChatHistory();
+
+      const container = document.getElementById('chat-messages');
+      const asstEl    = document.createElement('div');
+      asstEl.className = 'chat-msg chat-msg-asst';
+      container.appendChild(asstEl);
+      container.scrollTop = container.scrollHeight;
+
+      document.getElementById('btn-chat-send').disabled  = true;
+      document.getElementById('chat-input').disabled      = true;
+      document.getElementById('btn-chat-stop').classList.add('visible');
+
+      const system = `You are a writing coach helping improve a work-in-progress book chapter.\nThe current chapter text is provided below. Answer questions and give\nadvice about this specific text. Be concise and specific.\n\n--- CHAPTER TEXT ---\n${editor().textContent}`;
+
+      _chatAbort = new AbortController();
+      let asstText = '';
+      try {
+        const msgs = history.slice(-10).map(m => ({ role: m.role, content: m.content }));
+        for await (const chunk of streamClaude({ model: 'claude-haiku-4-5-20251001', system, messages: msgs, signal: _chatAbort.signal })) {
+          asstText += chunk;
+          asstEl.innerHTML = _mdToHtml(asstText);
+          container.scrollTop = container.scrollHeight;
+        }
+        if (asstText) {
+          history.push({ role: 'assistant', content: asstText, ts: Date.now() });
+          _chatSave(history);
+        }
+      } catch (err) {
+        const msg = aiError(err);
+        if (msg) asstEl.innerHTML = `<span style="color:#dc2626">${msg}</span>`;
+        else if (!asstText) container.removeChild(asstEl);
+      } finally {
+        _chatAbort = null;
+        document.getElementById('btn-chat-send').disabled  = false;
+        document.getElementById('chat-input').disabled      = false;
+        document.getElementById('btn-chat-stop').classList.remove('visible');
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+
+    function initChat() {
+      if (localStorage.getItem('book-chat-open') === 'true') {
+        document.getElementById('app').classList.add('chat-open');
+        document.getElementById('btn-chat').classList.add('active');
+        renderChatHistory();
+      }
+
+      document.getElementById('btn-chat').addEventListener('click', () => {
+        const open = document.getElementById('app').classList.toggle('chat-open');
+        localStorage.setItem('book-chat-open', open);
+        document.getElementById('btn-chat').classList.toggle('active', open);
+        if (open) renderChatHistory();
+      });
+
+      document.getElementById('btn-chat-clear').addEventListener('click', () => {
+        localStorage.removeItem(_chatKey());
+        document.getElementById('chat-messages').innerHTML = '';
+      });
+
+      const textarea = document.getElementById('chat-input');
+      textarea.addEventListener('input', () => {
+        textarea.style.height = '';
+        textarea.style.height = Math.min(textarea.scrollHeight, 112) + 'px';
+      });
+      textarea.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); }
+      });
+      document.getElementById('btn-chat-send').addEventListener('click', sendChatMessage);
+      document.getElementById('btn-chat-stop').addEventListener('click', () => {
+        if (_chatAbort) { _chatAbort.abort(); _chatAbort = null; }
+      });
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // critique.js — chapter critique modal with streaming + caching
+    // ═══════════════════════════════════════════════════════════════════════
+
+    let _critiqueAbort = null;
+
+    function _critiqueKey() { return `book-critique-${state.activeChapterId}`; }
+
+    function _critiqueCache() {
+      try { return JSON.parse(localStorage.getItem(_critiqueKey())); } catch { return null; }
+    }
+
+    function _critiqueSave(text) {
+      const wc = (editor().textContent.match(/\b\w+\b/g) || []).length;
+      try { localStorage.setItem(_critiqueKey(), JSON.stringify({ text, wordCount: wc })); } catch {}
+    }
+
+    function _critiqueStale(cache) {
+      if (!cache) return true;
+      const wc = (editor().textContent.match(/\b\w+\b/g) || []).length;
+      return Math.abs(wc - (cache.wordCount || 0)) >= 50;
+    }
+
+    function openCritique() {
+      if (!ensureApiKey()) return;
+      document.getElementById('critique-overlay').classList.add('open');
+      const cache = _critiqueCache();
+      if (!_critiqueStale(cache)) {
+        document.getElementById('critique-body').textContent = cache.text;
+        document.getElementById('btn-critique-regen').style.display = '';
+        document.getElementById('btn-critique-copy').disabled = false;
+      } else {
+        streamCritique();
+      }
+    }
+
+    function closeCritique() {
+      if (_critiqueAbort) { _critiqueAbort.abort(); _critiqueAbort = null; }
+      document.getElementById('critique-overlay').classList.remove('open');
+    }
+
+    async function streamCritique() {
+      const body = document.getElementById('critique-body');
+      body.textContent = '';
+      document.getElementById('btn-critique-regen').style.display = 'none';
+      document.getElementById('btn-critique-copy').disabled = true;
+
+      _critiqueAbort = new AbortController();
+      let fullText = '';
+      try {
+        for await (const chunk of streamClaude({
+          model: 'claude-sonnet-4-6',
+          system: `You are a developmental editor reviewing a book chapter draft.\nAnalyse the prose and provide structured feedback covering:\n1. Sentence variety and rhythm\n2. Passive voice and weak verb choices\n3. Adverb and filler-word overuse\n4. Paragraph pacing and transitions\n5. One specific paragraph to prioritize for revision (quote it)\n\nBe direct and specific. Use the actual text in your examples.\nMaximum 400 words.`,
+          messages: [{ role: 'user', content: editor().textContent }],
+          signal: _critiqueAbort.signal,
+        })) {
+          fullText += chunk;
+          body.textContent = fullText;
+          body.scrollTop   = body.scrollHeight;
+        }
+        if (fullText) {
+          _critiqueSave(fullText);
+          document.getElementById('btn-critique-regen').style.display = '';
+          document.getElementById('btn-critique-copy').disabled = false;
+        }
+      } catch (err) {
+        const msg = aiError(err);
+        if (msg) body.textContent = msg;
+      } finally {
+        _critiqueAbort = null;
+        document.getElementById('btn-critique-copy').disabled = false;
+      }
+    }
+
+    function initCritique() {
+      document.getElementById('btn-critique-trigger').addEventListener('click', openCritique);
+
+      function maybeCloseCritique() {
+        if (_critiqueAbort) {
+          if (confirm('Stop the critique in progress?')) closeCritique();
+        } else closeCritique();
+      }
+
+      document.getElementById('btn-critique-close').addEventListener('click', maybeCloseCritique);
+      document.getElementById('critique-overlay').addEventListener('click', e => {
+        if (e.target.id === 'critique-overlay') maybeCloseCritique();
+      });
+      document.getElementById('btn-critique-regen').addEventListener('click', streamCritique);
+      document.getElementById('btn-critique-copy').addEventListener('click', () => {
+        const text = document.getElementById('critique-body').textContent;
+        navigator.clipboard.writeText(text).then(() => showToast('✓ Copied to clipboard'));
+      });
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && document.getElementById('critique-overlay').classList.contains('open')) {
+          maybeCloseCritique();
+        }
+      });
+    }
+
 
     document.addEventListener('DOMContentLoaded', init);
   </script>
