@@ -671,8 +671,8 @@
       <button id="btn-settings-close" aria-label="Close settings">✕</button>
       <h3 id="settings-modal-title">Settings</h3>
       <div class="settings-field">
-        <label for="settings-key-input">Anthropic API Key</label>
-        <input type="password" id="settings-key-input" placeholder="sk-ant-…" autocomplete="off">
+        <label for="settings-key-input">AI API Key</label>
+        <input type="password" id="settings-key-input" placeholder="Your API key…" autocomplete="off">
       </div>
       <div id="settings-status"></div>
       <div class="settings-actions">
@@ -1591,16 +1591,18 @@
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // ai.js — shared Anthropic API helpers
+    // ai.js — shared AI helpers
     // ═══════════════════════════════════════════════════════════════════════
 
-    const AI_URL     = 'https://api.anthropic.com/v1/messages';
-    const AI_VERSION = '2023-06-01';
-    const AI_KEY_LS  = 'book-api-key';
+    const AI_URL          = 'https://api.anthropic.com/v1/messages';
+    const AI_VERSION      = '2023-06-01';
+    const AI_KEY_LS       = 'book-api-key';
+    const AI_MODEL_FAST   = 'claude-haiku-4-5-20251001';
+    const AI_MODEL_QUALITY = 'claude-sonnet-4-6';
 
     function getApiKey() { return localStorage.getItem(AI_KEY_LS) || ''; }
 
-    async function callClaude({ model, system, messages, signal }) {
+    async function callAI({ model, system, messages, signal }) {
       const resp = await fetch(AI_URL, {
         method: 'POST', signal,
         headers: {
@@ -1619,7 +1621,7 @@
       return data.content?.[0]?.text || '';
     }
 
-    async function* streamClaude({ model, system, messages, signal }) {
+    async function* streamAI({ model, system, messages, signal }) {
       const resp = await fetch(AI_URL, {
         method: 'POST', signal,
         headers: {
@@ -1661,7 +1663,7 @@
       if (err.name === 'AbortError') return '';
       if (err.status === 429) return 'Rate limit reached — wait a moment and try again.';
       if (err.status === 401) return 'Invalid API key — check Settings.';
-      return 'Could not reach Anthropic — check your connection.';
+      return 'Could not reach the AI service — check your connection.';
     }
 
 
@@ -1673,7 +1675,7 @@
       const inp = document.getElementById('settings-key-input');
       const st  = document.getElementById('settings-status');
       inp.value = getApiKey();
-      st.textContent = message || (getApiKey() ? 'Connected · claude-haiku-4-5' : 'No key saved');
+      st.textContent = message || (getApiKey() ? 'Connected' : 'No key saved');
       document.getElementById('settings-overlay').classList.add('open');
       setTimeout(() => inp.focus(), 60);
     }
@@ -1710,20 +1712,20 @@
               'content-type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'claude-haiku-4-5-20251001',
+              model: AI_MODEL_FAST,
               messages: [{ role: 'user', content: 'hi' }],
               max_tokens: 1,
             }),
           });
           if (resp.ok || resp.status === 400) {
             localStorage.setItem(AI_KEY_LS, key);
-            st.textContent = 'Verified ✓  Connected · claude-haiku-4-5';
+            st.textContent = 'Verified ✓  Connected';
           } else {
             const d = await resp.json().catch(() => ({}));
             st.textContent = d.error?.message || `Error ${resp.status}`;
           }
         } catch {
-          st.textContent = 'Could not reach Anthropic — check your connection.';
+          st.textContent = 'Could not reach the AI service — check your connection.';
         }
       });
 
@@ -1800,8 +1802,8 @@
       _pwAbort = new AbortController();
       const tid = setTimeout(() => _pwAbort?.abort(), 10000);
       try {
-        const result = await callClaude({
-          model: 'claude-haiku-4-5-20251001',
+        const result = await callAI({
+          model: AI_MODEL_FAST,
           system: 'You are a prose editor. Rewrite the given sentence to fix the flagged issue.\nReturn exactly two alternatives separated by the token |||.\nNo preamble, no labels, no explanation.',
           messages: [{ role: 'user', content: `Issue: ${ARIA_LABELS[markEl.dataset.type] || markEl.dataset.type}\nSentence: ${_sentenceFor(markEl)}` }],
           signal: _pwAbort.signal,
@@ -1946,7 +1948,7 @@
       let asstText = '';
       try {
         const msgs = history.slice(-10).map(m => ({ role: m.role, content: m.content }));
-        for await (const chunk of streamClaude({ model: 'claude-haiku-4-5-20251001', system, messages: msgs, signal: _chatAbort.signal })) {
+        for await (const chunk of streamAI({ model: AI_MODEL_FAST, system, messages: msgs, signal: _chatAbort.signal })) {
           asstText += chunk;
           asstEl.innerHTML = _mdToHtml(asstText);
           container.scrollTop = container.scrollHeight;
@@ -2052,8 +2054,8 @@
       _critiqueAbort = new AbortController();
       let fullText = '';
       try {
-        for await (const chunk of streamClaude({
-          model: 'claude-sonnet-4-6',
+        for await (const chunk of streamAI({
+          model: AI_MODEL_QUALITY,
           system: `You are a developmental editor reviewing a book chapter draft.\nAnalyse the prose and provide structured feedback covering:\n1. Sentence variety and rhythm\n2. Passive voice and weak verb choices\n3. Adverb and filler-word overuse\n4. Paragraph pacing and transitions\n5. One specific paragraph to prioritize for revision (quote it)\n\nBe direct and specific. Use the actual text in your examples.\nMaximum 400 words.`,
           messages: [{ role: 'user', content: editor().textContent }],
           signal: _critiqueAbort.signal,

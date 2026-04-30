@@ -10,11 +10,11 @@ The existing editor (Phases 1–3) passively flags prose problems with colour hi
 
 | Feature | What it does |
 |---------|-------------|
-| **Inline Rewrite Popovers** | Click any `<mark>` span → popover shows 2 Claude-generated rewrites for that sentence |
+| **Inline Rewrite Popovers** | Click any `<mark>` span → popover shows 2 AI-generated rewrites for that sentence |
 | **AI Chat Sidebar** | Persistent panel: ask free-form questions or give instructions scoped to the active chapter |
 | **Chapter Critique** | On-demand button → one structured critique of the full chapter's prose weaknesses |
 
-All three share a single Anthropic API key stored in `localStorage`. No backend, no build step — still one `index.html`.
+All three share a single AI API key stored in `localStorage`. No backend, no build step — still one `index.html`.
 
 ---
 
@@ -30,16 +30,16 @@ All three share a single Anthropic API key stored in `localStorage`. No backend,
 
 ## Prerequisites: API Key Settings Modal
 
-All three features require the user's Anthropic API key.
+All three features require the user's AI API key.
 
 ### UX
 - Gear icon (⚙) in the toolbar, right side.
 - Opens a modal with:
-  - `<input type="password">` — "Anthropic API Key" (placeholder: `sk-ant-…`)
+  - `<input type="password">` — "AI API Key" (placeholder: `Your API key…`)
   - "Save" button → stores key in `localStorage` under `book-api-key`
   - "Remove" link → clears key, disables AI features
-  - One-line status: "Connected · claude-haiku-4-5" or "No key saved"
-- Key is never sent anywhere except `api.anthropic.com/v1/messages`.
+  - One-line status: "Connected" or "No key saved"
+- Key is never sent anywhere except the configured AI API endpoint.
 
 ### Validation
 - On Save: fire a minimal `/v1/messages` call (1-token ping). Show "Verified ✓" or the API error message.
@@ -64,7 +64,7 @@ All three features require the user's Anthropic API key.
 - `Escape` closes.
 
 ### API Call
-Model: `claude-haiku-4-5-20251001`
+Model: fast model (`AI_MODEL_FAST`)
 
 System prompt (constant):
 ```
@@ -118,7 +118,7 @@ Where `{highlightType}` is one of: "very hard sentence", "hard sentence", "wordy
 - Submit button for mouse users.
 
 ### API Call
-Model: `claude-haiku-4-5-20251001`
+Model: fast model (`AI_MODEL_FAST`)
 
 System prompt (injected fresh each call, not stored in history sent to API):
 ```
@@ -135,7 +135,7 @@ Conversation history: last 10 `{role, content}` pairs sent as the `messages` arr
 User message: the textarea content.
 
 ### Streaming
-Use the Anthropic streaming API (`"stream": true`) — assistant response streams into the panel as it arrives, token by token.
+Use the streaming API (`"stream": true`) — assistant response streams into the panel as it arrives, token by token.
 
 ### UX details
 - User messages: right-aligned, light blue background.
@@ -165,7 +165,7 @@ Use the Anthropic streaming API (`"stream": true`) — assistant response stream
 - `Escape` closes (with confirmation if streaming in progress).
 
 ### API Call
-Model: `claude-sonnet-4-6` (better reasoning for holistic critique)
+Model: quality model (`AI_MODEL_QUALITY`, better reasoning for holistic critique)
 
 System prompt:
 ```
@@ -206,13 +206,15 @@ Single module section handling all API calls:
 
 ```js
 // ai.js
-const API_URL = 'https://api.anthropic.com/v1/messages';
-const API_VERSION = '2023-06-01';
+const AI_URL           = '<configured AI API endpoint>';
+const AI_VERSION       = '<API version>';
+const AI_MODEL_FAST    = '<fast model ID>';
+const AI_MODEL_QUALITY = '<quality model ID>';
 
 function getKey() { return localStorage.getItem('book-api-key') || ''; }
 
-async function callClaude({ model, system, messages, stream = false, signal }) { … }
-async function* streamClaude({ model, system, messages, signal }) { … }
+async function callAI({ model, system, messages, signal }) { … }
+async function* streamAI({ model, system, messages, signal }) { … }
 ```
 
 All three features call into `ai.js`. No feature imports directly from another feature.
@@ -220,7 +222,7 @@ All three features call into `ai.js`. No feature imports directly from another f
 ### Rate limiting / error UX
 - 429: show "Rate limit reached — wait a moment and try again."
 - 401: show "Invalid API key — check Settings."
-- Network error: show "Could not reach Anthropic — check your connection."
+- Network error: show "Could not reach the AI service — check your connection."
 - All error messages appear inline (in the popover, chat bubble, or critique body) — no `alert()`.
 
 ---
