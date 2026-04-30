@@ -735,7 +735,7 @@
       state._saveIndex();
       loadChapterIntoEditor(id);
       renderSidebar();
-      updateWordCount();
+      updateStats();
     }
 
     function loadChapterIntoEditor(id) {
@@ -770,13 +770,111 @@
 
 
     // ═══════════════════════════════════════════════════════════════════════
-    // stats.js (Phase 1 stub — word count only; full stats in Phase 2)
+    // analyzer.js — sentence segmenter, syllable counter, Flesch-Kincaid
     // ═══════════════════════════════════════════════════════════════════════
 
-    function updateWordCount() {
+    // Words that end with a period but are NOT sentence endings
+    const ABBREVS = new Set([
+      'mr','mrs','ms','dr','prof','sr','jr','rev','gen','sgt','cpl','pvt',
+      'capt','lt','col','maj','brig','vs','etc','approx','dept','est','fig',
+      'govt','incl','max','min','misc','no','ref','vol','jan','feb','mar',
+      'apr','jun','jul','aug','sep','oct','nov','dec','u.s','u.k','e.g','i.e',
+      'a.m','p.m','pp','op','ibid','ed','eds','vol','ch','sec',
+    ]);
+
+    function segmentSentences(text) {
+      if (!text.trim()) return [];
+      const sentences = [];
+      // Match sentence-ending punctuation followed by space + capital or quote
+      const re = /([.?!]+)\s+(?=[A-Z"'“‘])/g;
+      let last = 0, m;
+      while ((m = re.exec(text)) !== null) {
+        // Check for abbreviation: lowercase word immediately before the period
+        const before = text.slice(0, m.index + 1);
+        const abbrevMatch = before.match(/\b([a-zA-Z]+)\.$/);
+        if (abbrevMatch && ABBREVS.has(abbrevMatch[1].toLowerCase())) continue;
+        const s = text.slice(last, m.index + m[1].length).trim();
+        if (s) sentences.push(s);
+        last = m.index + m[0].length;
+      }
+      const tail = text.slice(last).trim();
+      if (tail) sentences.push(tail);
+      return sentences.filter(s => s.length > 1);
+    }
+
+    function countSyllables(word) {
+      word = word.toLowerCase().replace(/[^a-z]/g, '');
+      if (word.length <= 2) return 1;
+      word = word.replace(/e$/, '');          // drop silent-e
+      word = word.replace(/le$/, 'l');        // handle -le endings
+      const groups = word.match(/[aeiouy]+/g);
+      return Math.max(1, groups ? groups.length : 1);
+    }
+
+    function fleschKincaidGrade(text) {
+      const sents = segmentSentences(text);
+      if (!sents.length) return null;
+      const words = text.match(/\b[a-zA-Z'-]+\b/g) || [];
+      if (!words.length) return null;
+      const syllables = words.reduce((n, w) => n + countSyllables(w), 0);
+      const asl = words.length / sents.length;   // avg sentence length
+      const asw = syllables / words.length;       // avg syllables / word
+      return Math.max(0, 0.39 * asl + 11.8 * asw - 15.59);
+    }
+
+    function gradeLabel(grade) {
+      const g = Math.round(grade);
+      if (g <= 0)  return 'Below 1st grade';
+      if (g >= 17) return 'Graduate level';
+      const sfx = g === 1 ? 'st' : g === 2 ? 'nd' : g === 3 ? 'rd' : 'th';
+      return `${g}${sfx} grade`;
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // stats.js — word count, sentence count, paragraphs, reading time, grade
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function countParagraphs() {
+      const el = editor();
+      // Normalise all paragraph-break patterns into \n\n, then count non-empty chunks:
+      //   <div>…</div>  — Chrome Enter key
+      //   <p>…</p>      — Firefox Enter key
+      //   <br><br>      — innerText double-newline or Shift+Enter×2
+      const raw = el.innerHTML
+        .replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '\n\n')
+        .replace(/<\/div>|<\/p>/gi, '\n\n')
+        .replace(/<[^>]+>/g, '');
+      const chunks = raw.split(/\n\n+/).filter(c => c.trim().length > 0);
+      return chunks.length || (el.textContent.trim() ? 1 : 0);
+    }
+
+    function updateStats() {
       const text = editor().textContent || '';
-      const words = (text.match(/\b\w+\b/g) || []).length;
-      document.getElementById('stat-words').textContent = words.toLocaleString();
+
+      // S1 — words
+      const wordList = text.match(/\b\w+\b/g) || [];
+      const wordCount = wordList.length;
+
+      // S2 — sentences
+      const sents = segmentSentences(text);
+
+      // S3 — paragraphs
+      const paraCount = countParagraphs();
+
+      // S4 — reading time (238 wpm per PRD)
+      const minutes = Math.ceil(wordCount / 238);
+
+      // S5 — FK grade
+      const grade = wordCount > 5 ? fleschKincaidGrade(text) : null;
+
+      document.getElementById('stat-words').textContent        = wordCount.toLocaleString();
+      document.getElementById('stat-sentences').textContent    = sents.length.toLocaleString();
+      document.getElementById('stat-paragraphs').textContent   = paraCount.toLocaleString();
+      document.getElementById('stat-reading-time').textContent =
+        wordCount === 0 ? '—' : minutes === 1 ? '1 min' : `${minutes} min`;
+      document.getElementById('stat-grade').textContent        =
+        grade !== null ? gradeLabel(grade) : '—';
     }
 
 
@@ -858,8 +956,7 @@
 
     const onInput = debounce(() => {
       saveCurrentContent();
-      updateWordCount();
-      // Phase 2: stats.update()
+      updateStats();
       // Phase 3: analyzer.run() → highlighter.render()
     }, 400);
 
@@ -870,7 +967,7 @@
       const activeId = state.activeChapterId;
       if (activeId) {
         loadChapterIntoEditor(activeId);
-        updateWordCount();
+        updateStats();
       }
 
       // ── New chapter ─────────────────────────────────────────────────
@@ -881,7 +978,7 @@
         state._saveIndex();
         renderSidebar();
         loadChapterIntoEditor(ch.id);
-        updateWordCount();
+        updateStats();
       });
 
       // ── Editor input ─────────────────────────────────────────────────
@@ -931,7 +1028,7 @@
         renderSidebar();
         if (wasActive) {
           loadChapterIntoEditor(state.activeChapterId);
-          updateWordCount();
+          updateStats();
         }
       });
       document.getElementById('btn-cancel-delete').addEventListener('click', closeDeleteModal);
