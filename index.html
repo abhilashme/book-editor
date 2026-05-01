@@ -1734,6 +1734,10 @@
         document.getElementById('settings-key-input').value = '';
         document.getElementById('settings-status').textContent = 'No key saved';
       });
+
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && document.getElementById('settings-overlay').classList.contains('open')) closeSettings();
+      });
     }
 
 
